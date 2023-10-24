@@ -1,3 +1,5 @@
+import time
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -12,6 +14,7 @@ mydb = mysql.connector.connect(
     password="password1",
     database="MedicalDiagnosisAssistant"
 )
+
 my_cursor = mydb.cursor()
 
 my_cursor.execute("CREATE DATABASE IF NOT EXISTS MedicalDiagnosisAssistant")
@@ -240,29 +243,38 @@ def scrapeNIAMS():
     print(f"Length : {len(new_diseases_niams)}")
 
 
-def test():
-    counter = 0
+def getDetails():
+    my_cursor.execute("SELECT link FROM Diseases")
+    view_results = my_cursor.fetchall()
+    my_cursor.execute("SELECT disease_name FROM Diseases")
+    disease_name = my_cursor.fetchall()
+    # counter = 0
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get(
-        "https://www.nhsinform.scot/illnesses-and-conditions/heart-and-blood-vessels/conditions/abdominal-aortic-aneurysm/")
-    driver.maximize_window()
-    headings = driver.find_elements(by=By.XPATH,
-                                    value="//div[@class='active js-plethoraplugins-tab-panel']//h2[@class='wp-block-heading']")
-    all_paragraphs = driver.find_elements(by=By.XPATH,
-                                          value=f"//div[@class='active js-plethoraplugins-tab-panel']//h2[@class='wp-block-heading']//following-sibling::p")
-    print(len(all_paragraphs))
-    for i in range(len(headings)):
-        paragraphs = driver.find_elements(by=By.XPATH,
-                                          value=f"//div[@class='active js-plethoraplugins-tab-panel']//h2[@class='wp-block-heading'][{len(headings) - i}]//following-sibling::p")
-        print(headings[len(headings) - i - 1].get_attribute("innerText"))
-        for j in range(len(paragraphs) - counter):
-            print(paragraphs[j].get_attribute("innerText"))
-        counter += len(paragraphs)
-        print("-----------------------------------------------------------------")
+    for k in range(len(view_results)):
+        print(f"""
+
+        {disease_name[k][0]}
+
+        """)
+        driver.get(
+            f"{view_results[k][0]}")
+        headings = driver.find_elements(by=By.XPATH,
+                                        value="//div[@class='active js-plethoraplugins-tab-panel']//h2[@class='wp-block-heading']")
+        # all_paragraphs = driver.find_elements(by=By.XPATH,
+        #                                       value=f"//div[@class='active js-plethoraplugins-tab-panel']//h2[@class='wp-block-heading']//following-sibling::p")
+        previous = 0
+        for i in range(len(headings)):
+            paragraphs = driver.find_elements(by=By.XPATH,
+                                              value=f"//div[@class='active js-plethoraplugins-tab-panel']//h2[@class='wp-block-heading'][{len(headings) - i}]//following-sibling::p | //div[@class='active js-plethoraplugins-tab-panel']//h2[@class='wp-block-heading'][{len(headings) - i}]//following-sibling::ul//li")
+            print(headings[len(headings) - i - 1].get_attribute("innerText"))
+            for j in range(len(paragraphs) - previous):
+                print(paragraphs[j].get_attribute("innerText"))
+            previous = len(paragraphs)
+            print("-----------------------------------------------------------------")
 
 
 # scrapeNHS()
 # scrapeECDC()
 # scrapeNIAMS()
 # showDiseases()
-test()
+getDetails()
